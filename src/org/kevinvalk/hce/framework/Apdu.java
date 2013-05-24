@@ -1,6 +1,5 @@
 package org.kevinvalk.hce.framework;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import org.kevinvalk.hce.framework.apdu.HeaderApdu;
@@ -43,9 +42,9 @@ public class Apdu
 		
 	}
 	
-	public int getLength()
+	public int getLc()
 	{
-		return getLength(1);
+		return getLc(1);
 	}
 	
 	/**
@@ -56,17 +55,46 @@ public class Apdu
 	 * @param size
 	 * @return
 	 */
-	public int getLength(int size)
+	public int getLc(int length)
 	{
-		int length = 0;
-		int l = (getBuffer().length < Iso7816.OFFSET_LC + size) ? (Iso7816.OFFSET_LC + size) - getBuffer().length : size;
-		for (int i = 0; i < l; i++)
-		{
-			length <<= 8; // Shift left
-			length |= getBuffer()[Iso7816.OFFSET_LC+i] & 0xFF; // Grab one byte and OR it
-		}
-		return length;
+		return (int) getSomething(Iso7816.OFFSET_LC, length);
 	}
+	
+	public short getShort(int offset)
+	{
+		return (short) getSomething(offset, 2);
+	}
+	
+	public int getInt(int offset)
+	{
+		return (int) getSomething(offset, 4);
+	}
+	
+	public long getLong(int offset)
+	{
+		return getSomething(offset, 8);
+	}
+	
+	/**
+	 * Convert bytes to a number with a specefic byte length
+	 * 
+	 * Internal only
+	 * 
+	 * @param offset
+	 * @param length
+	 * @return
+	 */
+	private long getSomething(int offset, int length)
+	{
+		int value = 0;
+		for (int i = 0; i < length && getBuffer().length > Iso7816.OFFSET_LC + i; i++)
+		{
+			value <<= 8; // Shift left
+			value |= getBuffer()[offset+i] & 0xFF; // Grab one byte and OR it
+		}
+		return value;
+	}
+	
 	
 	public byte[] getData()
 	{

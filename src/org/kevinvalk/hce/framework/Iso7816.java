@@ -98,6 +98,11 @@ public abstract class Iso7816
      * Response status : Warning, card state unchanged  = 0x6200
      */
     public static final short SW_WARNING_STATE_UNCHANGED = 25088;
+    
+	public static final short SW_REFERENCE_DATA_NOT_FOUND = (short) 0x6A88;
+	
+	public static final short SW_INTERNAL_ERROR = (short) 0x6d66;
+	
     /**
      * APDU header offset : CLA = 0
      */

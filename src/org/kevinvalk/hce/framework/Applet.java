@@ -2,6 +2,8 @@ package org.kevinvalk.hce.framework;
 
 import java.io.IOException;
 
+import android.util.Log;
+
 public abstract class Applet implements Runnable 
 {
 	protected TagWrapper tag;
@@ -11,7 +13,7 @@ public abstract class Applet implements Runnable
 	
 	public abstract String getName();
 	public abstract byte[] getAid();
-	
+		
 	public Apdu sendApdu(Apdu apdu)
 	{
 		return Applet.sendApdu(tag, apdu);
@@ -52,4 +54,29 @@ public abstract class Applet implements Runnable
 	{
 		return sendApdu(tag, new Apdu(new byte[0]));
 	}
+	
+	/*** BEGIN DEBUG FUNCTIONS ***/
+	public void d(String msg)
+	{
+		Log.i(getName(), msg);
+	}
+	
+	public void d(String format, Object... args)
+	{
+		Log.i(getName(), String.format(format, (Object[])args));
+	}
+	
+	public static String toHex(byte[] buffer)
+	{
+		return toHex(buffer, 0, buffer.length);
+	}
+	
+	public static String toHex(byte[] buffer, int offset, int length)
+	{
+		String hex = "";
+		for(int i = offset; i < offset+length; i++)
+			hex = hex.concat(String.format("%02X ", buffer[i]));		
+		return hex.trim();
+	}
+	/*** END DEBUG FUNCTIONS ***/
 }
