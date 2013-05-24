@@ -1,19 +1,23 @@
 package org.kevinvalk.hce.framework;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.kevinvalk.hce.framework.apdu.AidApdu;
 
-public class Handler
+public class HceFramework
 {
 	Map<byte[], Applet> applets;
 	Map<byte[], List<Thread>> threads;
 	
-	public Handler()
+	public HceFramework()
 	{
-		applets.clear();
+		applets = new HashMap<byte[], Applet>();
+		threads = new HashMap<byte[], List<Thread>>();
+
 	}
 	
 	/**
@@ -35,31 +39,28 @@ public class Handler
 	 */
 	public boolean handleTag(TagWrapper tag)
 	{
-		Apdu apdu = getApdu(tag);
-		
-		
-		// First apdu is always aid selector
-		AidApdu aidApdu = new AidApdu();
-		apdu.getAs(aidApdu);
-		
+		AidApdu apdu = AidApdu.fromApdu(getApdu(tag));
+
 		// If this is not an applet selector apdu or we do not have this apdu then die!
-		Applet applet = applets.get(aidApdu.aid);
-		if (aidApdu.cla != Iso7816.CLA_ISO7816 && aidApdu.ins != Iso7816.INS_SELECT && applet != null )
+		Applet applet = applets.get(apdu.aid);
+		if (apdu.cla != Iso7816.CLA_ISO7816 || apdu.ins != Iso7816.INS_SELECT || applet == null )
 		{
 			sendApdu(tag, new Apdu(Iso7816.SW_APPLET_SELECT_FAILED));
 			return false;
-		}
-		else
-		{
-			// All good so answer with no error and pass the response to the applet
-			apdu = sendApdu(tag, new Apdu(Iso7816.SW_NO_ERROR));
 		}
 		
 		// Lets start the and pass the response
 		Thread appletThread = new Thread(applet);
 		appletThread.setName("Applet #" + appletThread.getId());
 		appletThread.start();
-		threads.get(aidApdu.aid).add(appletThread);
+		
+		// Add this thread to the running threads
+		List<Thread> appletThreads = threads.get(apdu.aid); 
+		if (threads == null)
+			appletThreads = new ArrayList<Thread>(); // If we never made a thread list here make the object first
+		appletThreads.add(appletThread);
+		
+		// Check if all was ok
 		return (appletThread != null);
 	}
 	

@@ -16,7 +16,11 @@ public class Apdu
 		this.buffer = buffer;
 		try
 		{
-			JavaStruct.unpack(header, this.buffer);
+			if(this.buffer != null && this.buffer.length != 0)
+			{
+				header = new HeaderApdu();
+				JavaStruct.unpack(header, this.buffer);
+			}
 		}
 		catch (StructException e)
 		{
