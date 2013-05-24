@@ -1,6 +1,5 @@
 package org.kevinvalk.hce.framework;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,15 +38,18 @@ public class HceFramework
 	 */
 	public boolean handleTag(TagWrapper tag)
 	{
-		AidApdu apdu = AidApdu.fromApdu(getApdu(tag));
+		AidApdu apdu = AidApdu.fromApdu(Applet.getApdu(tag));
 
 		// If this is not an applet selector apdu or we do not have this apdu then die!
 		Applet applet = applets.get(apdu.aid);
 		if (apdu.cla != Iso7816.CLA_ISO7816 || apdu.ins != Iso7816.INS_SELECT || applet == null )
 		{
-			sendApdu(tag, new Apdu(Iso7816.SW_APPLET_SELECT_FAILED));
+			Applet.sendApdu(tag, new Apdu(Iso7816.SW_APPLET_SELECT_FAILED));
 			return false;
 		}
+		
+		// Set up this applet
+		applet.tag = tag;
 		
 		// Lets start the and pass the response
 		Thread appletThread = new Thread(applet);
@@ -64,34 +66,5 @@ public class HceFramework
 		return (appletThread != null);
 	}
 	
-	/**
-	 * Sends an apdu to the tag and receives the answer
-	 * 
-	 * @param tag
-	 * @param Apdu The apdu to send
-	 * @return Apdu response
-	 */
-	public Apdu sendApdu(TagWrapper tag, Apdu apdu)
-	{
-		try
-		{
-			byte[] response = tag.transceive(apdu.getBuffer());
-			return new Apdu(response);
-		}
-		catch(IOException e)
-		{
-			throw new RuntimeException(e.getMessage());
-		}
-	}
-	
-	/**
-	 * Gets an apdu from the tag by sending zero bytes
-	 * 
-	 * @param tag
-	 * @return
-	 */
-	public Apdu getApdu(TagWrapper tag)
-	{
-		return sendApdu(tag, new Apdu(new byte[0]));
-	}
+
 }
