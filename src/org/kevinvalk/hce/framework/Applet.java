@@ -58,12 +58,22 @@ public abstract class Applet implements Runnable
 	/*** BEGIN DEBUG FUNCTIONS ***/
 	public void d(String msg)
 	{
-		Log.i(getName(), msg);
+		d(getName(), msg);
 	}
 	
 	public void d(String format, Object... args)
 	{
-		Log.i(getName(), String.format(format, (Object[])args));
+		d(getName(), format, args);
+	}
+	
+	public static void d(String tag, String msg)
+	{
+		Log.i(tag, msg);
+	}
+	
+	public static void d(String tag, String format, Object... args)
+	{
+		Log.i(tag, String.format(format, (Object[])args));
 	}
 	
 	public static String toHex(byte[] buffer)
@@ -71,6 +81,11 @@ public abstract class Applet implements Runnable
 		return toHex(buffer, 0, buffer.length);
 	}
 	
+	public static String toSHex(byte[] buffer)
+	{
+		return toHex(buffer).replace(" ", "");
+	}
+		
 	public static String toHex(byte[] buffer, int offset, int length)
 	{
 		String hex = "";
