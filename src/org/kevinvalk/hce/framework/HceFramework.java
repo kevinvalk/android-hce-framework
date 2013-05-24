@@ -51,10 +51,11 @@ public class HceFramework
 		
 		// Set up this applet
 		applet.tag = tag;
+		applet.apdu = Applet.sendApdu(tag, new Apdu(Iso7816.SW_NO_ERROR)); // Correct applet selected
 		
 		// Lets start the and pass the response
 		Thread appletThread = new Thread(applet);
-		appletThread.setName("Applet #" + appletThread.getId());
+		appletThread.setName(applet.getName()+" #" + appletThread.getId());
 		appletThread.start();
 		
 		// Add this thread to the running threads

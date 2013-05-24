@@ -6,9 +6,10 @@ public abstract class Applet implements Runnable
 {
 	protected TagWrapper tag;
 	protected boolean isRunning;
+	protected Apdu apdu;
+	public abstract Apdu handleApdu(Apdu apdu);
 	
-	public abstract boolean handleApdu(Apdu apdu);
-	
+	public abstract String getName();
 	public abstract byte[] getAid();
 	
 	public Apdu sendApdu(Apdu apdu)
