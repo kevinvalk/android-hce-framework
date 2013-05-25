@@ -35,7 +35,9 @@ public abstract class Applet implements Runnable
 	{
 		try
 		{
+			sd("NFC", "Send apdu: %s", toHex(apdu.getBuffer()));
 			byte[] response = tag.transceive(apdu.getBuffer());
+			sd("NFC", "Recv apdu: %s", toHex(response));
 			return new Apdu(response);
 		}
 		catch(IOException e)
@@ -58,20 +60,20 @@ public abstract class Applet implements Runnable
 	/*** BEGIN DEBUG FUNCTIONS ***/
 	public void d(String msg)
 	{
-		d(getName(), msg);
+		sd(getName(), msg);
 	}
 	
 	public void d(String format, Object... args)
 	{
-		d(getName(), format, args);
+		sd(getName(), format, args);
 	}
 	
-	public static void d(String tag, String msg)
+	public static void sd(String tag, String msg)
 	{
 		Log.i(tag, msg);
 	}
 	
-	public static void d(String tag, String format, Object... args)
+	public static void sd(String tag, String format, Object... args)
 	{
 		Log.i(tag, String.format(format, (Object[])args));
 	}

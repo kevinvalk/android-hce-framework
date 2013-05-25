@@ -28,6 +28,9 @@ public class HceFramework
 	 */
 	public boolean register(Applet applet)
 	{
+		// If it already contains this AID then just return true
+		if (applets.containsKey(ByteBuffer.wrap(applet.getAid())))
+			return true;
 		return (applets.put(ByteBuffer.wrap(applet.getAid()), applet) == null);
 	}
 
