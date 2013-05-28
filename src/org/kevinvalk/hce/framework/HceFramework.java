@@ -6,7 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.kevinvalk.hce.framework.apdu.AidApdu;
+import org.kevinvalk.hce.framework.apdu.CommandApdu;
+import org.kevinvalk.hce.framework.apdu.ResponseApdu;
 
 public class HceFramework
 {
@@ -42,19 +43,19 @@ public class HceFramework
 	 */
 	public boolean handleTag(TagWrapper tag)
 	{
-		AidApdu apdu = AidApdu.fromApdu(Applet.getApdu(tag));
+		CommandApdu apdu = new CommandApdu(Applet.getApdu(tag));
 
 		// If this is not an applet selector apdu or we do not have this apdu then die!
-		Applet applet = applets.get(ByteBuffer.wrap(apdu.aid));
+		Applet applet = applets.get(ByteBuffer.wrap(apdu.getData()));
 		if (apdu.cla != Iso7816.CLA_ISO7816 || apdu.ins != Iso7816.INS_SELECT || applet == null )
 		{
-			Applet.sendApdu(tag, new Apdu(Iso7816.SW_APPLET_SELECT_FAILED));
+			Applet.sendApdu(tag, new ResponseApdu(Iso7816.SW_APPLET_SELECT_FAILED));
 			return false;
 		}
 		
 		// Set up this applet
 		applet.tag = tag;
-		applet.apdu = Applet.sendApdu(tag, new Apdu(Iso7816.SW_NO_ERROR)); // Correct applet selected
+		applet.apdu = Applet.sendApdu(tag, new ResponseApdu(Iso7816.SW_NO_ERROR)); // Correct applet selected
 		
 		// Lets start the and pass the response
 		Thread appletThread = new Thread(applet);
@@ -62,7 +63,7 @@ public class HceFramework
 		appletThread.start();
 		
 		// Add this thread to the running threads
-		List<Thread> appletThreads = threads.get(ByteBuffer.wrap(apdu.aid)); 
+		List<Thread> appletThreads = threads.get(ByteBuffer.wrap(apdu.getData())); 
 		if (appletThreads == null)
 			appletThreads = new ArrayList<Thread>(); // If we never made a thread list here make the object first
 		appletThreads.add(appletThread);

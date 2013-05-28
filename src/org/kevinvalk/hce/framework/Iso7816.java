@@ -6,6 +6,8 @@ public abstract class Iso7816
 	static final int DO87_TYPE = 0x00000080;
 	static final byte DO87_BYTENO = 0x7F;
 	static final byte DO87_END = 0x01;
+	
+	public static final int LE_MAX = 256;
     /**
      * Response status : No Error = (short)0x9000
      */

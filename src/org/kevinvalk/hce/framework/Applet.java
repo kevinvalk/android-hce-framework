@@ -2,6 +2,8 @@ package org.kevinvalk.hce.framework;
 
 import java.io.IOException;
 
+import org.kevinvalk.hce.framework.apdu.Apdu;
+
 import android.util.Log;
 
 public abstract class Applet implements Runnable 
@@ -9,7 +11,6 @@ public abstract class Applet implements Runnable
 	protected TagWrapper tag;
 	protected boolean isRunning;
 	protected Apdu apdu;
-	public abstract Apdu handleApdu(Apdu apdu);
 	
 	public abstract String getName();
 	public abstract byte[] getAid();
@@ -35,8 +36,16 @@ public abstract class Applet implements Runnable
 	{
 		try
 		{
-			sd("NFC", "Send apdu: %s", toHex(apdu.getBuffer()));
-			byte[] response = tag.transceive(apdu.getBuffer());
+			byte[] response;
+			if (apdu == null)
+			{
+				response = tag.transceive(new byte[0]);
+			}
+			else
+			{
+				sd("NFC", "Send apdu: %s", toHex(apdu.getBuffer()));
+				response = tag.transceive(apdu.getBuffer());
+			}
 			sd("NFC", "Recv apdu: %s", toHex(response));
 			return new Apdu(response);
 		}
@@ -54,7 +63,7 @@ public abstract class Applet implements Runnable
 	 */
 	public static Apdu getApdu(TagWrapper tag)
 	{
-		return sendApdu(tag, new Apdu(new byte[0]));
+		return sendApdu(tag, null);
 	}
 	
 	/*** BEGIN DEBUG FUNCTIONS ***/
