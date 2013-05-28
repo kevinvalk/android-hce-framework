@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import org.kevinvalk.hce.framework.Iso7816;
 import org.kevinvalk.hce.framework.IsoException;
+import org.kevinvalk.hce.framework.Util;
 
 import struct.JavaStruct;
 import struct.StructClass;
@@ -53,16 +54,16 @@ public class CommandApdu extends Apdu
 				if (body.length == size)
 				{
 					// We only have Le
-					le = (int) getSomething(body, offset, lSize);
+					le = (int) Util.getSomething(body, offset, lSize);
 				}
 				else
 				{
 					// We have Lc
-					lc = (int) getSomething(body, offset, lSize);
+					lc = (int) Util.getSomething(body, offset, lSize);
 					
 					// Check if we have Le field
 					if (body.length - lc - size > 0)
-						le = (int) getSomething(body, size + lc, lSize);
+						le = (int) Util.getSomething(body, size + lc, lSize);
 				}
 				
 				// Extract the Data if we have some
