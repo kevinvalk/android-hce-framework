@@ -142,6 +142,13 @@ public class TagWrapper implements TagTechnology
         return 0;
     }
 
+    /**
+     * Sends the data to the other end and blocks until it has received data
+     * 
+     * @param data
+     * @return
+     * @throws IOException
+     */
     public byte[] transceive(byte[] data) throws IOException {
         try {
             return (byte[]) transceive.invoke(tagTech, data);

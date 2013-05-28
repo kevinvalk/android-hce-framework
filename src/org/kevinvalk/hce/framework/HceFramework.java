@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.kevinvalk.hce.framework.apdu.Apdu;
 import org.kevinvalk.hce.framework.apdu.CommandApdu;
 import org.kevinvalk.hce.framework.apdu.ResponseApdu;
 
@@ -36,41 +37,45 @@ public class HceFramework
 	}
 
 	/**
-	 * Handles new connected tags
+	 * Handles a new terminal
 	 * 
 	 * @param TagWrapper tag
 	 * @return boolean
 	 */
 	public boolean handleTag(TagWrapper tag)
 	{
-		CommandApdu apdu = new CommandApdu(Applet.getApdu(tag));
-
-		// If this is not an applet selector apdu or we do not have this apdu then die!
-		Applet applet = applets.get(ByteBuffer.wrap(apdu.getData()));
-		if (apdu.cla != Iso7816.CLA_ISO7816 || apdu.ins != Iso7816.INS_SELECT || applet == null )
+		try
 		{
-			Applet.sendApdu(tag, new ResponseApdu(Iso7816.SW_APPLET_SELECT_FAILED));
+			CommandApdu apdu = new CommandApdu(AppletThread.getApdu(tag));
+	
+			// If this is not an applet selector apdu or we do not have this apdu then die!
+			Applet applet = applets.get(ByteBuffer.wrap(apdu.getData()));
+			if (apdu.cla != Iso7816.CLA_ISO7816 || apdu.ins != Iso7816.INS_SELECT || applet == null )
+			{
+				AppletThread.sendApdu(tag, new ResponseApdu(Iso7816.SW_APPLET_SELECT_FAILED));
+				return false;
+			}
+			
+			// Set up this applet
+			Apdu response = AppletThread.sendApdu(tag, new ResponseApdu(Iso7816.SW_NO_ERROR)); // Correct applet selected
+			
+			// Lets start the applet thread
+			Thread appletThread = new Thread(new AppletThread(applet, tag, response));
+			appletThread.setName(applet.getName()+" #" + appletThread.getId());
+			appletThread.start();
+	
+			// Add this thread to the running threads
+			List<Thread> appletThreads = threads.get(ByteBuffer.wrap(apdu.getData())); 
+			if (appletThreads == null)
+				appletThreads = new ArrayList<Thread>(); // If we never made a thread list here make the object first
+			appletThreads.add(appletThread);
+			
+			// Check if all was ok
+			return (appletThread != null);
+		}
+		catch(Exception e)
+		{
 			return false;
 		}
-		
-		// Set up this applet
-		applet.tag = tag;
-		applet.apdu = Applet.sendApdu(tag, new ResponseApdu(Iso7816.SW_NO_ERROR)); // Correct applet selected
-		
-		// Lets start the and pass the response
-		Thread appletThread = new Thread(applet);
-		appletThread.setName(applet.getName()+" #" + appletThread.getId());
-		appletThread.start();
-		
-		// Add this thread to the running threads
-		List<Thread> appletThreads = threads.get(ByteBuffer.wrap(apdu.getData())); 
-		if (appletThreads == null)
-			appletThreads = new ArrayList<Thread>(); // If we never made a thread list here make the object first
-		appletThreads.add(appletThread);
-		
-		// Check if all was ok
-		return (appletThread != null);
 	}
-	
-
 }
