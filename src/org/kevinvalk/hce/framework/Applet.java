@@ -18,7 +18,12 @@ public abstract class Applet
 	/**
 	 * To let you know you have been selected by a terminal
 	 */
-	public abstract void select();
+	public void select() {};
+	
+	/**
+	 * To let you know you have been deselected by the system
+	 */
+	public void deselect() {};
 	
 	/**
 	 * Get the applets name

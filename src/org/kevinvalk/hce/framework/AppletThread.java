@@ -8,10 +8,15 @@ import org.kevinvalk.hce.framework.apdu.ResponseApdu;
 
 public class AppletThread implements Runnable 
 {
-	private boolean isRunning;
-	Applet applet;
-	Apdu firstApdu;
-	TagWrapper tag;
+	private volatile boolean isRunning = false;
+	Applet applet = null;
+	Apdu firstApdu = null;
+	TagWrapper tag = null;
+
+	public AppletThread()
+	{
+		
+	}
 	
 	public AppletThread(Applet applet, TagWrapper tag, Apdu firstApdu)
 	{
@@ -19,17 +24,47 @@ public class AppletThread implements Runnable
 		this.tag = tag;
 		this.firstApdu = firstApdu;
 	}
+	
+	public synchronized void stop()
+	{
+		isRunning = false;
+		try
+		{
+			if (tag != null)
+				tag.close();
+		}
+		catch(Exception e)
+		{
+			Thread.currentThread().interrupt();
+			throw new RuntimeException(e.getMessage());
+		}
+	}
+	
+	public synchronized boolean setApplet(Applet applet, TagWrapper tag)
+	{
+		// If we are busy then deny
+		if(isRunning)
+			return false;
+		
+		// Select the new one
+		this.applet = applet;
+		this.tag = tag;
+		
+		return true;
+	}
+	
+	public synchronized void setApdu(Apdu apdu)
+	{
+		this.firstApdu = apdu;
+	}
 
 	@Override
 	public void run()
 	{
 		// Initialize
-		isRunning = true;
 		Apdu apdu = firstApdu;
 		firstApdu = null;
-		
-		// Let the applet know it has been selected
-		applet.select();
+		isRunning = true;
 		
 		// Lets start handling all incoming traffic
 		while(isRunning)
@@ -56,12 +91,13 @@ public class AppletThread implements Runnable
 			catch(Exception e)
 			{
 				// We got a hard error so stop this
-				isRunning = false;
 				Util.d("THREAD", "Caught exception `%s`", e.getMessage());
+				isRunning = false;
+				return;
 			}
 		}
 		
-		Util.d("THREAD", "Stopping");
+		Util.d("THREAD", "Gracefull stop");
 	}
 	
 	/**

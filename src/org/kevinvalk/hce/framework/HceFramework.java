@@ -1,9 +1,7 @@
 package org.kevinvalk.hce.framework;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.kevinvalk.hce.framework.apdu.Apdu;
@@ -12,14 +10,15 @@ import org.kevinvalk.hce.framework.apdu.ResponseApdu;
 
 public class HceFramework
 {
-	Map<ByteBuffer, Applet> applets;
-	Map<ByteBuffer, List<Thread>> threads;
+	private Map<ByteBuffer, Applet> applets_;
+	private Applet activeApplet_;
+	private volatile AppletThread appletThread_;
 	
 	public HceFramework()
 	{
-		applets = new HashMap<ByteBuffer, Applet>();
-		threads = new HashMap<ByteBuffer, List<Thread>>();
-
+		applets_ = new HashMap<ByteBuffer, Applet>();
+		activeApplet_ = null;
+		appletThread_ = new AppletThread();
 	}
 	
 	/**
@@ -31,11 +30,11 @@ public class HceFramework
 	public boolean register(Applet applet)
 	{
 		// If it already contains this AID then just return true
-		if (applets.containsKey(ByteBuffer.wrap(applet.getAid())))
+		if (applets_.containsKey(ByteBuffer.wrap(applet.getAid())))
 			return true;
-		return (applets.put(ByteBuffer.wrap(applet.getAid()), applet) == null);
+		return (applets_.put(ByteBuffer.wrap(applet.getAid()), applet) == null);
 	}
-
+	
 	/**
 	 * Handles a new terminal
 	 * 
@@ -46,32 +45,61 @@ public class HceFramework
 	{
 		try
 		{
-			CommandApdu apdu = new CommandApdu(AppletThread.getApdu(tag));
-	
-			// If this is not an applet selector apdu or we do not have this apdu then die!
-			Applet applet = applets.get(ByteBuffer.wrap(apdu.getData()));
-			if (apdu.cla != Iso7816.CLA_ISO7816 || apdu.ins != Iso7816.INS_SELECT || applet == null )
+			// Get the first APDU from the tag
+			Apdu apdu = AppletThread.getApdu(tag); 
+
+			// Keep trying
+			do
 			{
-				AppletThread.sendApdu(tag, new ResponseApdu(Iso7816.SW_APPLET_SELECT_FAILED));
-				return false;
+				CommandApdu commandApdu = new CommandApdu(apdu);
+				
+				// SELECT
+				if (commandApdu.cla == Iso7816.CLA_ISO7816 && commandApdu.ins == Iso7816.INS_SELECT)
+				{
+					// Check P1 and P2
+					if (commandApdu.p1 != Iso7816.P1_DF || commandApdu.p2 != Iso7816.P2_SELECT)
+					{
+						apdu = AppletThread.sendApdu(tag, new ResponseApdu(Iso7816.SW_INCORRECT_P1P2));
+						continue;
+					}
+					
+					// We have an applet
+					if (applets_.containsKey(ByteBuffer.wrap(commandApdu.getData())))
+					{
+						Util.d("FW", "Found an applet");
+						
+						// If we have an active applet deselect it
+						if (activeApplet_ != null)
+							activeApplet_.deselect();
+											
+						// Set the applet to active and select it
+						activeApplet_ = applets_.get(ByteBuffer.wrap(commandApdu.getData()));
+						activeApplet_.select();
+						
+						// Send an OK and start the applet
+						Apdu response = AppletThread.sendApdu(tag, new ResponseApdu(Iso7816.SW_NO_ERROR));
+						
+						// Stop current applet thread and wait just a bit
+						appletThread_.stop();
+						Thread.sleep(250);
+						
+						// Set the applet to the active runnable
+						appletThread_.setApplet(activeApplet_, tag);
+						appletThread_.setApdu(response);
+						
+						// Run it
+						Thread thread= new Thread(appletThread_);
+						thread.setName("JavaCard");
+						thread.start();
+						
+						// Stop trying
+						return true;
+					}
+				}
+				
+				apdu = AppletThread.sendApdu(tag, new ResponseApdu(Iso7816.SW_INS_NOT_SUPPORTED));
 			}
-			
-			// Set up this applet
-			Apdu response = AppletThread.sendApdu(tag, new ResponseApdu(Iso7816.SW_NO_ERROR)); // Correct applet selected
-			
-			// Lets start the applet thread
-			Thread appletThread = new Thread(new AppletThread(applet, tag, response));
-			appletThread.setName(applet.getName()+" #" + appletThread.getId());
-			appletThread.start();
-	
-			// Add this thread to the running threads
-			List<Thread> appletThreads = threads.get(ByteBuffer.wrap(apdu.getData())); 
-			if (appletThreads == null)
-				appletThreads = new ArrayList<Thread>(); // If we never made a thread list here make the object first
-			appletThreads.add(appletThread);
-			
-			// Check if all was ok
-			return (appletThread != null);
+			while(true);
 		}
 		catch(Exception e)
 		{

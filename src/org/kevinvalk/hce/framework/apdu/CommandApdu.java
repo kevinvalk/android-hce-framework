@@ -45,7 +45,7 @@ public class CommandApdu extends Apdu
 			if(body.length > 0)
 			{
 				// We running extended or not
-				boolean extended = (body[0] == 0x0);
+				boolean extended = (body[0] == 0x0 && body.length >= 3); // If extended flag is true, we expect at least 2 more bytes
 				int size = (extended ? 3 : 1); //1
 				int offset = (extended ? 1 : 0); //0
 				int lSize = (extended ? 2 : 1); //1

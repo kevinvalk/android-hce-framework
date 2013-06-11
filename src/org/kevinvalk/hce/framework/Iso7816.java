@@ -141,4 +141,11 @@ public abstract class Iso7816
      * APDU command INS : EXTERNAL AUTHENTICATE = 0x82
      */
     public static final byte INS_EXTERNAL_AUTHENTICATE = -126;
+    
+    /**
+     * P1
+     */
+    public static final byte P1_DF = 0x04;
+    
+    public static final byte P2_SELECT = 0x0C;
 }
