@@ -91,7 +91,7 @@ public class AppletThread implements Runnable
 			catch(Exception e)
 			{
 				// We got a hard error so stop this
-				Util.d("THREAD", "Caught exception `%s`", e.getMessage());
+				Util.d("THREAD", "Caught exception `%s` at %s", e.getMessage(), e.getStackTrace()[0].toString());
 				isRunning = false;
 				return;
 			}

@@ -56,18 +56,12 @@ public class HceFramework
 				// SELECT
 				if (commandApdu.cla == Iso7816.CLA_ISO7816 && commandApdu.ins == Iso7816.INS_SELECT)
 				{
-					// Check P1 and P2
-					if (commandApdu.p1 != Iso7816.P1_DF || commandApdu.p2 != Iso7816.P2_SELECT)
-					{
-						apdu = AppletThread.sendApdu(tag, new ResponseApdu(Iso7816.SW_INCORRECT_P1P2));
-						continue;
-					}
+					
+					// TODO: Process P1 and P2 and handle that
 					
 					// We have an applet
 					if (applets_.containsKey(ByteBuffer.wrap(commandApdu.getData())))
-					{
-						Util.d("FW", "Found an applet");
-						
+					{					
 						// If we have an active applet deselect it
 						if (activeApplet_ != null)
 							activeApplet_.deselect();
@@ -95,9 +89,20 @@ public class HceFramework
 						// Stop trying
 						return true;
 					}
+					else
+					{
+						// Something went wrong
+						apdu = AppletThread.sendApdu(tag, new ResponseApdu(Iso7816.SW_APPLET_SELECT_FAILED));
+						continue;
+					}
 				}
 				
-				apdu = AppletThread.sendApdu(tag, new ResponseApdu(Iso7816.SW_INS_NOT_SUPPORTED));
+				// This is as defined in the specifications
+				// If we have an active applet let them process this commandApdu
+				if (activeApplet_ != null)
+					apdu = AppletThread.sendApdu(tag, activeApplet_.process(commandApdu));
+				else
+					apdu = AppletThread.sendApdu(tag, new ResponseApdu(Iso7816.SW_INS_NOT_SUPPORTED));
 			}
 			while(true);
 		}

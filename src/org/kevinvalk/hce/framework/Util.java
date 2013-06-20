@@ -2,6 +2,7 @@ package org.kevinvalk.hce.framework;
 
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import android.util.Log;
 
@@ -11,6 +12,17 @@ import android.util.Log;
  */
 public final class Util
 {
+	/**
+	 * Checks if an array is equal to another array
+	 * 
+	 * @param array1
+	 * @param array2
+	 * @return
+	 */
+	public static boolean equal(byte[] array1, byte[] array2)
+	{
+		return Arrays.equals(array1, array2);
+	}
 	
 	public static byte[] xorArray(byte[] array1, byte[] array2)
 	{

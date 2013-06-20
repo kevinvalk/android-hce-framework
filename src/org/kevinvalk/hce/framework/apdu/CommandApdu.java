@@ -34,6 +34,16 @@ public class CommandApdu extends Apdu
 	private int le;
 	private byte[] cdata = null;
 	
+	public CommandApdu(byte[] buffer, int length)
+	{
+		this(Arrays.copyOf(buffer, length));
+	}
+	
+	public CommandApdu(byte[] buffer)
+	{
+		this(new Apdu(buffer));
+	}
+	
 	public CommandApdu(Apdu apdu)
 	{
 		try
