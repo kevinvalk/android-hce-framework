@@ -18,6 +18,7 @@ public class ResponseApdu extends Apdu
 	@StructField(order = 1)
 	public short sw;
 
+	// FIXME: Introduced for jmrt port
 	public int length = 0;
 	
 	public ResponseApdu(short status)
